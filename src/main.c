@@ -1,14 +1,12 @@
 #include <avr/io.h>
+#include <util/delay.h>
 
-int main(void)
-{
-    /* test the GNU __extension__ with -pedantic settings */
-    uint8_t someBinVar = __extension__ 0b01011010;
-
-    DDRB |= someBinVar;
-
-    for(;;)
-    {
-        //
+int main(void) {
+    DDRB |= (1 << DDB1);
+    while (1) {
+        PORTB |= (1 << PORTB1);
+        _delay_ms(1000);
+        PORTB &= ~(1 << PORTB1);
+        _delay_ms(1000);
     }
 }
