@@ -1,10 +1,10 @@
 # I target a recent cmake, it shouldn't be a problem on a dev machine
 cmake_minimum_required(VERSION 3.11)
 # Project name
-project("My Firmware")
+project("Fireflies")
 
 # Product filename
-set(PRODUCT_NAME my_firmware)
+set(PRODUCT_NAME fireflies_firmware)
 
 ## AVR Chip Configuration
 # 8Mhz, this should match the crystal on your board,
