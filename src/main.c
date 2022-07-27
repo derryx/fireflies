@@ -2,7 +2,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-#define DELAY 6
+#define DELAY 4
 volatile uint8_t brightness;
 
 static inline void initTimer0(void) {
