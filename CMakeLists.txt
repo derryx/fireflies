@@ -72,6 +72,8 @@ add_executable(${PRODUCT_NAME} ${SRC_FILES})
 # Rename the output to .elf as we will create multiple files
 set_target_properties(${PRODUCT_NAME} PROPERTIES OUTPUT_NAME ${PRODUCT_NAME}.elf)
 
+add_custom_target(size ALL avr-size ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
+
 # Strip binary for upload
 add_custom_target(strip ALL avr-strip ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
 
