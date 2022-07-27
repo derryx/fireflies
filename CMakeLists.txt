@@ -20,11 +20,10 @@ set(PROG_TYPE avrispmkII)
 
 # AVR Fuses, must be in concordance with your hardware and F_CPU
 # http://eleccelerator.com/fusecalc/fusecalc.php?chip=atmega328p
-set(E_FUSE 0xfd)
-set(H_FUSE 0xda)
-set(L_FUSE 0xfd)
+set(E_FUSE 0xfe)
+set(H_FUSE 0xdf)
+set(L_FUSE 0x62)
 set(LOCK_BIT 0xff)
-
 
 # Use AVR GCC toolchain
 set(CMAKE_SYSTEM_NAME Generic)
