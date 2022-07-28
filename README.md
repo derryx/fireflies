@@ -18,7 +18,11 @@ Inside the WSL2 VM:
 sudo apt install linux-tools-virtual hwdata
 sudo update-alternatives --install /usr/local/bin/usbip usbip `ls /usr/lib/linux-tools/*/usbip | tail -n1` 20
 ```
-And setup udev to set the propper rights for the port.
+
+Add file `/etc/udev/rules.d/99-avr-programmer.rules` with content
+```
+KERNEL=="ttyACM*", GROUP="dialout", MODE="0660", ACTION=="add"
+```
 
 ### List and mount USB device (Admin cmd.exe):
 ```
