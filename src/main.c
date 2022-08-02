@@ -2,15 +2,23 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <stdlib.h>
 
 #define DELAY 4
 #define ROUNDS 20
+
+#define SRAM_START	0x100 // ATmega328p specific.
+#define SRAM_END	0x900 // ATmega328p specific.
+
 volatile uint8_t brightness;
 volatile uint8_t activeLed;
-uint16_t rand = 0x1234;
 
-static inline uint16_t nextRand(void) {
-    return rand = 2053 * rand + 13849;
+
+uint8_t ramSeed(void) {
+    uint8_t seed = 0xAA;
+    for (uint8_t * i = (uint8_t *)SRAM_START; i < (uint8_t *)SRAM_END; i++)
+        if (*i != seed) seed ^= (*i); // If we xor a variable with itself, we get zero
+    return seed;
 }
 
 static inline void startTimer0(void) {
@@ -35,9 +43,10 @@ ISR(TIMER0_COMPA_vect) {
 ISR(INT0_vect){
 }
 
-uint8_t LEDS[] = {PB4, PB5};
+uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
 
 int main(void) {
+    srand(ramSeed());
     activeLed = PB5;
     DDRB |= (1 << activeLed);
     DDRD = 0; // all on PORTD are input
@@ -59,14 +68,14 @@ int main(void) {
                 brightness = i;
             }
 
-            uint8_t delayCount = nextRand() & 0xf;
+            uint8_t delayCount = rand() & 0xf;
             for (uint8_t i = 0; i < delayCount; ++i) {
                 _delay_ms(200);
             }
             stopTimer0();
             PORTB = 0;
             DDRB &= ~(1 << activeLed);
-            activeLed = LEDS[nextRand() >> 15 & 1];
+            activeLed = LEDS[rand() & 0x7];
             DDRB |= (1 << activeLed);
         }
         sleep_bod_disable();
