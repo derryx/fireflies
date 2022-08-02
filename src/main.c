@@ -69,6 +69,7 @@ int main(void) {
             activeLed = LEDS[nextRand() >> 15 & 1];
             DDRB |= (1 << activeLed);
         }
+        sleep_bod_disable();
         set_sleep_mode(SLEEP_MODE_PWR_DOWN); // choose power down mode
         sleep_mode();
     }
