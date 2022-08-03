@@ -44,10 +44,21 @@ ISR(INT0_vect){
 }
 
 //uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
-uint8_t LEDS[] = {PB4, PB5};
+uint8_t LEDS[] = {PB2, PB3, PB4, PB5};
+
+//uint16_t _rand = 0x1234;
+
+//static inline uint16_t nextRand(void) {
+//    return _rand = 2053 * _rand + 13849;
+//}
+
+static inline uint8_t chooseLed(void) {
+    return LEDS[random()%4];
+}
 
 int main(void) {
-    srand(ramSeed());
+   // _rand = ramSeed();
+    srandom(ramSeed());
     ACSR |= (1 << ACD); //disable analog converter
     DDRD = 0; // all on PORTD are input
     PORTD = 0xff;
@@ -57,7 +68,7 @@ int main(void) {
 
     brightness = 0;
     while (1) {
-        activeLed = PB5;
+        activeLed = chooseLed();
         DDRB |= (1 << activeLed);
         for (uint8_t r=0;r<ROUNDS;++r) {
             startTimer0();
@@ -70,16 +81,18 @@ int main(void) {
                 brightness = i;
             }
 
-            uint8_t delayCount = rand() & 0xf;
+            uint8_t delayCount = random() % 32;
             for (uint8_t i = 0; i < delayCount; ++i) {
-                _delay_ms(200);
+                _delay_ms(100);
             }
             stopTimer0();
             PORTB = 0;
-            DDRB &= ~(1 << activeLed);
-            activeLed = LEDS[rand() & 0x1];
+            DDRB = 0;
+            activeLed = chooseLed();
             DDRB |= (1 << activeLed);
         }
+        PORTB = 0;
+        DDRB = 0;
         sleep_bod_disable();
         set_sleep_mode(SLEEP_MODE_PWR_DOWN); // choose power down mode
         sleep_mode();
