@@ -4,7 +4,7 @@
 #include <avr/sleep.h>
 #include <stdlib.h>
 
-#define DELAY 4
+#define DELAY 2
 #define ROUNDS 20
 
 #define SRAM_START	0x100 // ATmega328p specific.
@@ -43,20 +43,22 @@ ISR(TIMER0_COMPA_vect) {
 ISR(INT0_vect){
 }
 
-uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
+//uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
+uint8_t LEDS[] = {PB4, PB5};
 
 int main(void) {
     srand(ramSeed());
-    activeLed = PB5;
-    DDRB |= (1 << activeLed);
+    ACSR |= (1 << ACD); //disable analog converter
     DDRD = 0; // all on PORTD are input
-    PORTD |= (1 << PD2); // enable pullup on INT0
+    PORTD = 0xff;
     EICRA |= (1<<ISC01)|(1<<ISC00); // interrupt on level
     EIMSK |= (1<<INT0); // enable INT0 interrupt
     sei();
 
     brightness = 0;
     while (1) {
+        activeLed = PB5;
+        DDRB |= (1 << activeLed);
         for (uint8_t r=0;r<ROUNDS;++r) {
             startTimer0();
             for (uint8_t i = 0; i < 255; ++i) {
@@ -75,7 +77,7 @@ int main(void) {
             stopTimer0();
             PORTB = 0;
             DDRB &= ~(1 << activeLed);
-            activeLed = LEDS[rand() & 0x7];
+            activeLed = LEDS[rand() & 0x1];
             DDRB |= (1 << activeLed);
         }
         sleep_bod_disable();
