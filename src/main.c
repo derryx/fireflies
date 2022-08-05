@@ -7,17 +7,14 @@
 #define DELAY 2
 #define ROUNDS 20
 
-#define SRAM_START	0x100 // ATmega328p specific.
-#define SRAM_END	0x900 // ATmega328p specific.
-
 volatile uint8_t brightness;
 volatile uint8_t activeLed;
 
-
-uint8_t ramSeed(void) {
-    uint8_t seed = 0xAA;
-    for (uint8_t * i = (uint8_t *)SRAM_START; i < (uint8_t *)SRAM_END; i++)
-        if (*i != seed) seed ^= (*i); // If we xor a variable with itself, we get zero
+inline uint16_t ramSeed(void) {
+    uint16_t seed = 0xCAFE;
+    for (uint16_t *i = (uint16_t *) RAMSTART; i < (uint16_t *) RAMEND; ++i) {
+        if (*i != seed) seed ^= (*i);
+    } // If we xor a variable with itself, we get zero
     return seed;
 }
 
@@ -40,61 +37,84 @@ ISR(TIMER0_COMPA_vect) {
     PORTB &= ~(1 << activeLed);
 }
 
-ISR(INT0_vect){
+ISR(INT0_vect) {
+
 }
 
 //uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
-uint8_t LEDS[] = {PB2, PB3, PB4, PB5};
-
-//uint16_t _rand = 0x1234;
-
-//static inline uint16_t nextRand(void) {
-//    return _rand = 2053 * _rand + 13849;
-//}
+const uint8_t LEDS[] = {PB2, PB3, PB4, PB5};
 
 static inline uint8_t chooseLed(void) {
-    return LEDS[random()%4];
+    return LEDS[random() % (sizeof(LEDS)/sizeof(LEDS[0]))];
+}
+
+void randomSleep(void) {
+    uint8_t delayCount = random() % 32;
+    for (uint8_t i = 0; i < delayCount; ++i) {
+        _delay_ms(100);
+    }
+}
+
+inline void disableAnalogConverter(void) {
+    ACSR |= (1 << ACD); //disable analog converter
+}
+
+inline void enableTriggerInterrupt(void) {
+    EICRA |= (1 << ISC01) | (1 << ISC00); // interrupt on level
+    EIMSK |= (1 << INT0); // enable INT0 interrupt
+}
+
+void enableAndChooseLed(void) {
+    activeLed = chooseLed();
+    DDRB |= (1 << activeLed);
+}
+
+void rampLedUp(void) {
+    for (uint8_t i = 0; i < 255; ++i) {
+        _delay_ms(DELAY);
+        brightness = i;
+    }
+}
+
+void rampLedDown(void) {
+    for (uint8_t i = 255; i > 0; --i) {
+        _delay_ms(DELAY);
+        brightness = i;
+    }
+}
+
+inline void switchOffLeds(void) {
+    PORTB = 0;
+    DDRB = 0;
+}
+
+inline void switchOffUnnnecessaryIO(void) {
+    DDRD = 0; // all on PORTD are input
+    PORTD = 0xff;
 }
 
 int main(void) {
-   // _rand = ramSeed();
     srandom(ramSeed());
-    ACSR |= (1 << ACD); //disable analog converter
-    DDRD = 0; // all on PORTD are input
-    PORTD = 0xff;
-    EICRA |= (1<<ISC01)|(1<<ISC00); // interrupt on level
-    EIMSK |= (1<<INT0); // enable INT0 interrupt
+    disableAnalogConverter();
+    switchOffUnnnecessaryIO();
+    enableTriggerInterrupt();
     sei();
 
     brightness = 0;
     while (1) {
-        activeLed = chooseLed();
-        DDRB |= (1 << activeLed);
-        for (uint8_t r=0;r<ROUNDS;++r) {
+        enableAndChooseLed();
+        for (uint8_t r = 0; r < ROUNDS; ++r) {
             startTimer0();
-            for (uint8_t i = 0; i < 255; ++i) {
-                _delay_ms(DELAY);
-                brightness = i;
-            }
-            for (uint8_t i = 255; i > 0; --i) {
-                _delay_ms(DELAY);
-                brightness = i;
-            }
-
-            uint8_t delayCount = random() % 32;
-            for (uint8_t i = 0; i < delayCount; ++i) {
-                _delay_ms(100);
-            }
+            rampLedUp();
+            rampLedDown();
             stopTimer0();
-            PORTB = 0;
-            DDRB = 0;
-            activeLed = chooseLed();
-            DDRB |= (1 << activeLed);
+            switchOffLeds();
+            randomSleep();
+            enableAndChooseLed();
         }
-        PORTB = 0;
-        DDRB = 0;
-        sleep_bod_disable();
-        set_sleep_mode(SLEEP_MODE_PWR_DOWN); // choose power down mode
+        switchOffLeds();
+        sleep_bod_disable(); // no brownout detection while sleeping - safes some energy
+        set_sleep_mode(SLEEP_MODE_PWR_DOWN); // we go in the deepest sleep
         sleep_mode();
     }
 }
