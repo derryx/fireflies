@@ -65,6 +65,7 @@ inline void enableTriggerInterrupt(void) {
 }
 
 void enableAndChooseLed(void) {
+    DDRB = 0;
     activeLed = chooseLed();
     DDRB |= (1 << activeLed);
 }
@@ -84,13 +85,13 @@ void rampLedDown(void) {
 }
 
 inline void switchOffLeds(void) {
-    PORTB = 0;
-    DDRB = 0;
+    DDRB = 0; // all on PORTB are input
+    PORTB = 0; // all pullups disable because LEDs pull to low
 }
 
 inline void switchOffUnnnecessaryIO(void) {
     DDRD = 0; // all on PORTD are input
-    PORTD = 0xff;
+    PORTD = 0xff; // all pullups enable against oscillation
 }
 
 int main(void) {
