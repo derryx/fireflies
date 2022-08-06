@@ -64,10 +64,22 @@ inline void enableTriggerInterrupt(void) {
     EIMSK |= (1 << INT0); // enable INT0 interrupt
 }
 
-void enableAndChooseLed(void) {
+void chooseAndEnableLed(void) {
     DDRB = 0;
     activeLed = chooseLed();
     DDRB |= (1 << activeLed);
+}
+
+void testAllLeds(void) {
+    PORTB = 0xff;
+    DDRB = 0;
+
+    for (uint8_t i=0;i<(sizeof(LEDS)/sizeof(LEDS[0]));++i) {
+        DDRB |= (1<<LEDS[i]);
+        _delay_ms(200);
+        DDRB = 0;
+    }
+    PORTB = 0;
 }
 
 void rampLedUp(void) {
@@ -92,6 +104,8 @@ inline void switchOffLeds(void) {
 inline void switchOffUnnnecessaryIO(void) {
     DDRD = 0; // all on PORTD are input
     PORTD = 0xff; // all pullups enable against oscillation
+    DDRC = 0;
+    PORTC = 0xff;
 }
 
 int main(void) {
@@ -99,11 +113,12 @@ int main(void) {
     disableAnalogConverter();
     switchOffUnnnecessaryIO();
     enableTriggerInterrupt();
+    testAllLeds();
     sei();
 
     brightness = 0;
     while (1) {
-        enableAndChooseLed();
+        chooseAndEnableLed();
         for (uint8_t r = 0; r < ROUNDS; ++r) {
             startTimer0();
             rampLedUp();
@@ -111,7 +126,7 @@ int main(void) {
             stopTimer0();
             switchOffLeds();
             randomSleep();
-            enableAndChooseLed();
+            chooseAndEnableLed();
         }
         switchOffLeds();
         sleep_bod_disable(); // no brownout detection while sleeping - safes some energy
