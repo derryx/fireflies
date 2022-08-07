@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #define DELAY 2
-#define ROUNDS 20
+#define ROUNDS 100
 
 volatile uint8_t brightness;
 volatile uint8_t activeLed;
@@ -41,8 +41,12 @@ ISR(INT0_vect) {
 
 }
 
+#define LED_PORTB 1
+#define LED_PORTC 2
+#define LED_PORTD 3
+
 //uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
-const uint8_t LEDS[] = {PB2, PB3, PB4, PB5};
+const uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
 
 static inline uint8_t chooseLed(void) {
     return LEDS[random() % (sizeof(LEDS)/sizeof(LEDS[0]))];
@@ -129,7 +133,7 @@ int main(void) {
             chooseAndEnableLed();
         }
         switchOffLeds();
-        sleep_bod_disable(); // no brownout detection while sleeping - safes some energy
+        sleep_bod_disable(); // no brownout detection while sleeping - safes some energy 
         set_sleep_mode(SLEEP_MODE_PWR_DOWN); // we go in the deepest sleep
         sleep_mode();
     }
