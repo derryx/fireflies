@@ -7,12 +7,23 @@
 #define DELAY 2
 #define ROUNDS 100
 
-volatile uint8_t brightness;
-volatile uint8_t activeLed;
+#define LED_PORTB 1
+#define LED_PORTC 2
+#define LED_PORTD 3
 
-inline uint16_t ramSeed(void) {
-    uint16_t seed = 0xCAFE;
-    for (uint16_t *i = (uint16_t *) RAMSTART; i < (uint16_t *) RAMEND; ++i) {
+struct LED {
+    uint8_t port;
+    uint8_t pin;
+};
+
+typedef struct LED LED;
+
+volatile uint8_t brightness;
+volatile LED activeLed;
+
+inline uint32_t ramSeed(void) {
+    uint32_t seed = 0xCAFEBABE;
+    for (uint32_t *i = (uint32_t *) RAMSTART; i < (uint32_t *) RAMEND; ++i) {
         if (*i != seed) seed ^= (*i);
     } // If we xor a variable with itself, we get zero
     return seed;
@@ -28,27 +39,50 @@ static inline void stopTimer0(void) {
     TIMSK0 &= ~((1 << OCIE0A) | (1 << TOIE0));
 }
 
+inline void activateLed(LED led) {
+    switch(led.port) {
+        case LED_PORTB:
+            PORTB |= (1 << led.pin);
+            break;
+        case LED_PORTC:
+            PORTC |= (1 << led.pin);
+            break;
+        case LED_PORTD:
+            PORTD |= (1 << led.pin);
+            break;
+    }
+}
+
+inline void deactivateLed(LED led) {
+    switch(led.port) {
+        case LED_PORTB:
+            PORTB &= ~(1 << led.pin);
+            break;
+        case LED_PORTC:
+            PORTC &= ~(1 << led.pin);
+            break;
+        case LED_PORTD:
+            PORTD &= ~(1 << led.pin);
+            break;
+    }
+}
+
 ISR(TIMER0_OVF_vect) {
-    PORTB |= (1 << activeLed);
+    activateLed(activeLed);
     OCR0A = brightness;
 }
 
 ISR(TIMER0_COMPA_vect) {
-    PORTB &= ~(1 << activeLed);
+    deactivateLed(activeLed);
 }
 
 ISR(INT0_vect) {
 
 }
 
-#define LED_PORTB 1
-#define LED_PORTC 2
-#define LED_PORTD 3
+const LED LEDS[] = { {LED_PORTB, PB1}, {LED_PORTB, PB2}, {LED_PORTB, PB3}, {LED_PORTB, PB4}, {LED_PORTB, PB5}, {LED_PORTB, PB6}, {LED_PORTB, PB7}};
 
-//uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
-const uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
-
-static inline uint8_t chooseLed(void) {
+static inline LED chooseLed(void) {
     return LEDS[random() % (sizeof(LEDS)/sizeof(LEDS[0]))];
 }
 
@@ -71,7 +105,7 @@ inline void enableTriggerInterrupt(void) {
 void chooseAndEnableLed(void) {
     DDRB = 0;
     activeLed = chooseLed();
-    DDRB |= (1 << activeLed);
+    activateLed(activeLed);
 }
 
 void testAllLeds(void) {
@@ -79,9 +113,9 @@ void testAllLeds(void) {
     DDRB = 0;
 
     for (uint8_t i=0;i<(sizeof(LEDS)/sizeof(LEDS[0]));++i) {
-        DDRB |= (1<<LEDS[i]);
+        activateLed(LEDS[i]);
         _delay_ms(200);
-        DDRB = 0;
+        deactivateLed(LEDS[i]);
     }
     PORTB = 0;
 }
@@ -112,7 +146,8 @@ inline void switchOffUnnnecessaryIO(void) {
     PORTC = 0xff;
 }
 
-int main(void) {
+static void main_loop (void) __attribute__((noreturn));
+void main_loop (void) {
     srandom(ramSeed());
     disableAnalogConverter();
     switchOffUnnnecessaryIO();
@@ -137,4 +172,10 @@ int main(void) {
         set_sleep_mode(SLEEP_MODE_PWR_DOWN); // we go in the deepest sleep
         sleep_mode();
     }
+}
+
+int main (void)
+{
+    main_loop();
+    return 0;
 }
