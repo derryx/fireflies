@@ -122,15 +122,15 @@ void testAllLeds(void) {
 
 void rampLedUp(void) {
     for (uint8_t i = 0; i < 255; ++i) {
-        _delay_ms(DELAY);
         brightness = i;
+        _delay_ms(DELAY);
     }
 }
 
 void rampLedDown(void) {
     for (uint8_t i = 255; i > 0; --i) {
-        _delay_ms(DELAY);
         brightness = i;
+        _delay_ms(DELAY);
     }
 }
 
