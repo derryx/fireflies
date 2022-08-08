@@ -64,6 +64,8 @@ add_compile_options(
         -fdata-sections
         -fno-split-wide-types
         -fno-tree-scev-cprop
+        -fverbose-asm
+        -save-temps
 )
 file(GLOB SRC_FILES "src/*.c") # Load all files in src folder
 
