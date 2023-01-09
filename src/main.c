@@ -7,19 +7,9 @@
 #define DELAY 2
 #define ROUNDS 100
 
-#define LED_PORTB 1
-#define LED_PORTC 2
-#define LED_PORTD 3
-
-struct LED {
-    uint8_t port;
-    uint8_t pin;
-};
-
-typedef struct LED LED;
 
 volatile uint8_t brightness;
-volatile LED activeLed;
+volatile uint8_t activeLed;
 
 inline uint32_t ramSeed(void) {
     uint32_t seed = 0xCAFEBABE;
@@ -39,32 +29,12 @@ static inline void stopTimer0(void) {
     TIMSK0 &= ~((1 << OCIE0A) | (1 << TOIE0));
 }
 
-inline void activateLed(LED led) {
-    switch(led.port) {
-        case LED_PORTB:
-            PORTB |= (1 << led.pin);
-            break;
-        case LED_PORTC:
-            PORTC |= (1 << led.pin);
-            break;
-        case LED_PORTD:
-            PORTD |= (1 << led.pin);
-            break;
-    }
+inline void activateLed(uint8_t led) {
+    PORTB |= (1 << led);
 }
 
-inline void deactivateLed(LED led) {
-    switch(led.port) {
-        case LED_PORTB:
-            PORTB &= ~(1 << led.pin);
-            break;
-        case LED_PORTC:
-            PORTC &= ~(1 << led.pin);
-            break;
-        case LED_PORTD:
-            PORTD &= ~(1 << led.pin);
-            break;
-    }
+inline void deactivateLed(uint8_t led) {
+    PORTB &= ~(1 << led);
 }
 
 ISR(TIMER0_OVF_vect) {
@@ -80,10 +50,10 @@ ISR(INT0_vect) {
 
 }
 
-const LED LEDS[] = { {LED_PORTB, PB1}, {LED_PORTB, PB2}, {LED_PORTB, PB3}, {LED_PORTB, PB4}, {LED_PORTB, PB5}, {LED_PORTB, PB6}, {LED_PORTB, PB7}};
+const uint8_t LEDS[] = {PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7};
 
-static inline LED chooseLed(void) {
-    return LEDS[random() % (sizeof(LEDS)/sizeof(LEDS[0]))];
+static inline uint8_t chooseLed(void) {
+    return LEDS[random() % (sizeof(uint8_t) / sizeof(LEDS[0]))];
 }
 
 void randomSleep(void) {
@@ -112,7 +82,7 @@ void testAllLeds(void) {
     PORTB = 0xff;
     DDRB = 0;
 
-    for (uint8_t i=0;i<(sizeof(LEDS)/sizeof(LEDS[0]));++i) {
+    for (uint8_t i = 0; i < (sizeof(LEDS) / sizeof(LEDS[0])); ++i) {
         activateLed(LEDS[i]);
         _delay_ms(200);
         deactivateLed(LEDS[i]);
@@ -146,8 +116,9 @@ inline void switchOffUnnnecessaryIO(void) {
     PORTC = 0xff;
 }
 
-static void main_loop (void) __attribute__((noreturn));
-void main_loop (void) {
+static void main_loop(void) __attribute__((noreturn));
+
+void main_loop(void) {
     srandom(ramSeed());
     disableAnalogConverter();
     switchOffUnnnecessaryIO();
@@ -174,8 +145,7 @@ void main_loop (void) {
     }
 }
 
-int main (void)
-{
+int main(void) {
     main_loop();
     return 0;
 }
