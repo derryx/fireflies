@@ -75,6 +75,8 @@ set_target_properties(${PRODUCT_NAME} PROPERTIES OUTPUT_NAME ${PRODUCT_NAME}.elf
 
 add_custom_target(size ALL avr-size ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
 
+add_custom_target(asm ALL avr-objdump -h -S ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
+
 # Strip binary for upload
 add_custom_target(strip ALL avr-strip ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
 
